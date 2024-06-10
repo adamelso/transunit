@@ -6,6 +6,12 @@ use PhpParser\NodeFinder;
 use PhpParser\Node;
 use Transunit\Pass;
 
+/**
+ * ```
+ * -   $this->_testSubject->contractOut(47)->shouldReturn($agent47);
+ * +   static::assertSame($agent47, $this->_testSubject->contractOut(47));
+ * ```
+ */
 class AssertionPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array

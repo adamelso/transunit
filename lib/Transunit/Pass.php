@@ -9,5 +9,6 @@ interface Pass
 {
     /** @param Node[] $ast */
     public function find(NodeFinder $nodeFinder, $ast): array;
+
     public function rewrite(Node $node): void;
 }

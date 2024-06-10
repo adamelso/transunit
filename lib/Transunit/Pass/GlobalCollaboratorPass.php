@@ -7,6 +7,32 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
+/**
+ * ```
+ *   class TestSubjectTest extends TestCase
+ *   {
+ *       use ProphecyTrait;
+ *
+ * +     private ObjectProphecy|AgentRepository $agentRepository;
+ * +     private ObjectProphecy|EventDispatcher $eventDispatcher;
+ *
+ *       function let(AgentRepository $agentRepository, EventDispatcher $eventDispatcher)
+ *       {
+ *           $this->beConstructedWith($agentRepository, $eventDispatcher);
+ *       }
+ *
+ *       function it_contracts_out_agents(AgentRepository $agentRepository, EventDispatcher $eventDispatcher, Agent $agent47, ContractEvent $event)
+ *       {
+ * -         $agentRepository->find(47)->willReturn($agent47);
+ * +         $this->agentRepository->find(47)->willReturn($agent47);
+ *
+ * -         $eventDispatcher->dispatch($event)->shouldBeCalled();
+ * +         $this->eventDispatcher->dispatch($event)->shouldBeCalled();
+ *
+ *           $this->contractOut(47)->shouldReturn($agent47);
+ *       }
+ * ```
+ */
 class GlobalCollaboratorPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array

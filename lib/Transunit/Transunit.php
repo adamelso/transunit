@@ -53,7 +53,8 @@ class Transunit
         $newStmts = $traverser->traverse($sourceAst);
 
         $nodeFinder = new NodeFinder();
-        $passes = [
+
+        $rewritePasses = [
             new Pass\MoveNamespacePass(),
             new Pass\ImportSubjectClassPass(),
             new Pass\ImportMockingLibraryPass(),
@@ -64,11 +65,14 @@ class Transunit
             new Pass\GlobalTestSubjectInstancePass(),
             new Pass\CallTestSubjectPass(),
             new Pass\AssertionPass(),
-            new Pass\TestMethodPass(),
+            new Pass\RenameSetupPass(),
+            new Pass\AddTestMethodPrefixPass(),
+            new Pass\ProphesizeGlobalCollaboratorsPass(),
+            new Pass\ProphesizeLocalCollaboratorsPass(),
         ];
 
         /** @var Pass $pass */
-        foreach ($passes as $pass) {
+        foreach ($rewritePasses as $pass) {
             $nodes = $pass->find($nodeFinder, $newStmts);
             foreach ($nodes as $node) {
                 $pass->rewrite($node);

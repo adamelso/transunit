@@ -6,6 +6,18 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
+/**
+ * ```
+ *       function it_contracts_out_agents(AgentRepository $agentRepository, EventDispatcher $eventDispatcher, Agent $agent47, ContractEvent $event)
+ *       {
+ *           $this->agentRepository->find(47)->willReturn($agent47);
+ *           $this->eventDispatcher->dispatch($event)->shouldBeCalled();
+ *
+ * -         $this->contractOut(47)->shouldReturn($agent47);
+ * +         $this->_testSubject->contractOut(47)->shouldReturn($agent47);
+ *       }
+ * ```
+ */
 class CallTestSubjectPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array

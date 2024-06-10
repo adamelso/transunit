@@ -7,6 +7,22 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
+/**
+ * ```
+ *   class TestSubjectTest extends TestCase
+ *   {
+ *       use ProphecyTrait;
+ *
+ * +     private TestSubject $_testSubject;
+ *
+ * -     function let(AgentRepository $agentRepository, EventDispatcher $eventDispatcher)
+ * +     protected function setUp(): void
+ *       {
+ * -         $this->beConstructedWith($agentRepository, $eventDispatcher);
+ * +         $this->_testSubject = new TestSubject($this->agentRepository->reveal(), $this->eventDispatcher->reveal());
+ *       }
+ * ```
+ */
 class GlobalTestSubjectInstancePass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
