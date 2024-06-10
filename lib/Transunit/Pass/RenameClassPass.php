@@ -3,11 +3,18 @@
 namespace Transunit\Pass;
 
 use PhpParser\Node;
-use PhpParser\NodeFinder;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\NodeFinder;
 use Transunit\Pass;
 
-class ClassnamePass implements Pass
+/**
+ * ```
+ * - class TestSubjectSpec extends ObjectBehaviour
+ * + class TestSubjectTest extends ObjectBehaviour
+ * {
+ * ```
+ */
+class RenameClassPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -21,8 +28,6 @@ class ClassnamePass implements Pass
         }
 
         $this->renameClass($node);
-        $this->changeExtendedClass($node);
-        $this->useProphecyTrait($node);
     }
 
     private function renameClass(Class_ $node): void
@@ -36,20 +41,5 @@ class ClassnamePass implements Pass
         $targetClassname = substr_replace($sourceClassname, '', -4).'Test';
 
         $node->name = new Node\Identifier($targetClassname);
-    }
-
-    private function changeExtendedClass(Class_ $node): void
-    {
-        if ($node->extends->toString() === 'ObjectBehavior') {
-            $node->extends = new Node\Name('TestCase');
-        }
-    }
-
-    private function useProphecyTrait(Class_ $node):  void
-    {
-        $node->stmts = array_merge(
-            [new Node\Stmt\TraitUse([new Node\Name('ProphecyTrait')])],
-            $node->stmts
-        );
     }
 }
