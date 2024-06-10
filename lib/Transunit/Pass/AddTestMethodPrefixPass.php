@@ -43,7 +43,10 @@ class AddTestMethodPrefixPass implements Pass
     {
         $methodName = $node->name->toString();
 
-        if (0 !== strpos($methodName, 'it_')) {
+        if (
+            0 !== strpos($methodName, 'it_')
+            || 0 !== strpos($methodName, 'its_')
+        ) {
             return;
         }
 
