@@ -73,14 +73,29 @@ class GlobalTestSubjectInstancePass implements Pass
 
         foreach ($node->stmts as $stmt) {
             // Check if expression is a property assignment
-            if ($stmt instanceof Node\Stmt\Expression
-                && $stmt->expr instanceof Node\Expr\Assign
-                && $stmt->expr->var instanceof Node\Expr\PropertyFetch
-                && $stmt->expr->var->var instanceof Node\Expr\Variable
-                && $stmt->expr->var->var->name === 'this'
-            ) {
-                $collaboratorNames[$stmt->expr->var->name->name] = true;
+            if (! $stmt instanceof Node\Stmt\Expression) {
+                continue;
             }
+
+            if (! $stmt->expr instanceof Node\Expr\Assign) {
+                continue;
+            }
+
+            if (! $stmt->expr->var instanceof Node\Expr\PropertyFetch) {
+                continue;
+            }
+
+            if (! $stmt->expr->var->var instanceof Node\Expr\Variable) {
+                continue;
+            }
+
+            $collaboratorVariableName = $stmt->expr->var->var->name;
+
+            if ($collaboratorVariableName === 'this') {
+                continue;
+            }
+
+            $collaboratorNames[$collaboratorVariableName] = true;
         }
 
         $globalCollaborators = [];

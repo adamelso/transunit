@@ -12,22 +12,27 @@ use Symfony\Component\Finder\Finder;
 
 class Transunit
 {
-    public static function run(string $path): void
+    public static function run(string $path, string $destination = 'var'): void
     {
-        $f = new Filesystem();
+        $fs = new Filesystem();
         $specs = (new Finder())->files()->in($path)->name('*Spec.php');
 
         $root = dirname(__DIR__, 2);
-        $exportDir = "{$root}/var";
-        $f->remove($exportDir);
-        $f->mkdir($exportDir);
+        $exportDir = "{$root}/{$destination}";
+
+        $fs->remove($exportDir);
+        $fs->mkdir($exportDir);
 
         foreach ($specs as $file) {
+            $relative = trim($fs->makePathRelative($file->getPath(), $path), DIRECTORY_SEPARATOR);
             $newFilename = substr($file->getBasename(), 0, -8) . 'Test.php';
+            $fullPathToNewTestFile = "{$exportDir}/{$relative}/{$newFilename}";
+
             $modifiedCode = self::processFile($file->getRealPath());
-            $fullPathToNewTestFile = "{$exportDir}/{$newFilename}";
-            $f->touch($fullPathToNewTestFile);
-            file_put_contents($fullPathToNewTestFile, $modifiedCode);
+
+            $fs->mkdir("{$exportDir}/{$relative}");
+            $fs->touch($fullPathToNewTestFile);
+            $fs->dumpFile($fullPathToNewTestFile, $modifiedCode);
         }
     }
 
@@ -49,7 +54,9 @@ class Transunit
 
         $nodeFinder = new NodeFinder();
         $passes = [
-            new Pass\NamespacePass(),
+            new Pass\MoveNamespacePass(),
+            new Pass\ImportSubjectClassPass(),
+            new Pass\ImportMockingLibraryPass(),
             new Pass\ClassnamePass(),
             new Pass\GlobalCollaboratorPass(),
             new Pass\GlobalTestSubjectInstancePass(),

@@ -2,13 +2,11 @@
     "require-dev": {
         "phpspec/phpspec": "*",
         "phpunit/phpunit": "*",
-        "sylius/addressing": "*",
+        "sylius/sylius": "^1.0",
         "phpspec/prophecy-phpunit": "^2.2"
     },
     "require": {
-        "nikic/php-parser": "*",
-        "symfony/finder": "*",
-        "symfony/filesystem": "^7.0"
+        "nikic/php-parser": "*"
     },
     "autoload": {
         "psr-4": {

@@ -8,7 +8,17 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
-class NamespacePass implements Pass
+/**
+ * ```
+ *   namespace test\unit\Foo\Bar;
+ *
+ * + use Foo\Bar\TestSubject;
+ *
+ *   class TestSubjectSpec extends ObjectBehaviour
+ *   {
+ * ```
+ */
+class ImportSubjectClassPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -21,24 +31,7 @@ class NamespacePass implements Pass
             return;
         }
 
-        $this->moveToNamespace($node);
         $this->importSubjectClass($node);
-        $this->importMockingLibraryClasses($node);
-    }
-
-    /**
-     * namespace tests\unit\Foo\Bar;
-     */
-    private function moveToNamespace(Namespace_ $node): void
-    {
-        $ns = $node->name->getParts();
-
-        if ($ns[0] === 'spec') {
-            array_shift($ns);
-            $ns = array_merge(['tests', 'unit'], $ns);
-        }
-
-        $node->name = new Name($ns);
     }
 
     /**
@@ -80,20 +73,5 @@ class NamespacePass implements Pass
         ]);
 
         array_unshift($node->stmts, $use);
-    }
-
-    private function importMockingLibraryClasses(Namespace_ $node): void
-    {
-        array_unshift($node->stmts, new Node\Stmt\Use_([
-            new Node\Stmt\UseUse(new Name('Prophecy\Prophecy\ObjectProphecy')),
-        ]));
-
-        array_unshift($node->stmts, new Node\Stmt\Use_([
-            new Node\Stmt\UseUse(new Name('Prophecy\PhpUnit\ProphecyTrait')),
-        ]));
-
-        array_unshift($node->stmts, new Node\Stmt\Use_([
-            new Node\Stmt\UseUse(new Name('PHPUnit\Framework\TestCase')),
-        ]));
     }
 }
