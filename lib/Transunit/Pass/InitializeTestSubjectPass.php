@@ -2,7 +2,6 @@
 
 namespace Transunit\Pass;
 
-use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
@@ -13,17 +12,17 @@ use Transunit\Pass;
  *   {
  *       use ProphecyTrait;
  *
- * +     private TestSubject $_testSubject;
+ *       private TestSubject $_testSubject;
  *
  * -     function let(AgentRepository $agentRepository, EventDispatcher $eventDispatcher)
- * +     protected function setUp(): void
+ * +     function let()
  *       {
  * -         $this->beConstructedWith($agentRepository, $eventDispatcher);
  * +         $this->_testSubject = new TestSubject($this->agentRepository->reveal(), $this->eventDispatcher->reveal());
  *       }
  * ```
  */
-class GlobalTestSubjectInstancePass implements Pass
+class InitializeTestSubjectPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -36,55 +35,38 @@ class GlobalTestSubjectInstancePass implements Pass
             return;
         }
 
-        $testClassname = $node->name->toString();
-        $subjectClassname = substr($testClassname, 0, -4);
+        $setupMethod = $this->findSetupMethod($node);
 
-        $setupMethod = null;
+        if (!$setupMethod instanceof Node\Stmt\ClassMethod) {
+            return;
+        }
+
+        $useProphecyTrait = array_shift($node->stmts);
+
+        $this->instantiateTestSubject($setupMethod);
+
+        array_unshift($node->stmts, $useProphecyTrait);
+    }
+
+    private function findSetupMethod(Node\Stmt\Class_ $node): ?Node\Stmt\ClassMethod
+    {
         foreach ($node->stmts as $stmt) {
             if (
                 $stmt instanceof Node\Stmt\ClassMethod
                 && in_array($stmt->name->toString(), ['setUp', 'let'], true)
             ) {
-                $setupMethod = $stmt;
-                break;
+                return $stmt;
             }
         }
 
-        $useProphecyTrait = array_shift($node->stmts);
-
-        if (!$setupMethod) {
-            // Add setUp method
-            $setupMethod = new Node\Stmt\ClassMethod('setUp', [
-                'type' => Modifiers::PROTECTED,
-                'stmts' => [
-                    $this->writeInstantiation($subjectClassname),
-                ],
-                'returnType' => new Node\Name('void')
-            ]);
-
-            array_unshift($node->stmts, $setupMethod);
-        }
-
-        $this->instantiateTestSubject($setupMethod, $subjectClassname);
-        $this->declareTestSubjectAsClassProperty($node, $subjectClassname);
-
-        array_unshift($node->stmts, $useProphecyTrait);
+        return null;
     }
 
-    private function declareTestSubjectAsClassProperty(Node\Stmt\Class_ $node, string $subjectClassname): void
+    private function instantiateTestSubject(Node\Stmt\ClassMethod $node): void
     {
-        $testSubjectProperty = new Node\Stmt\Property(
-            Modifiers::PRIVATE,
-            [new Node\Stmt\PropertyProperty('_testSubject')],
-            [],
-            new Node\Name($subjectClassname)
-        );
+        $testClassname = $node->name->toString();
+        $subjectClassname = substr($testClassname, 0, -4);
 
-        array_unshift($node->stmts, $testSubjectProperty);
-    }
-
-    private function instantiateTestSubject(Node\Stmt\ClassMethod $node, string $subjectClassname): void
-    {
         $collaboratorNames = [];
 
         foreach ($node->stmts as $stmt) {
