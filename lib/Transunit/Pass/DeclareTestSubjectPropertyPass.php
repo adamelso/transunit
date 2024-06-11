@@ -29,11 +29,7 @@ class DeclareTestSubjectPropertyPass implements Pass
             return;
         }
 
-        $useProphecyTrait = array_shift($node->stmts);
-
         $this->declareTestSubjectAsClassProperty($node);
-
-        array_unshift($node->stmts, $useProphecyTrait);
     }
 
     private function declareTestSubjectAsClassProperty(Node\Stmt\Class_ $node): void

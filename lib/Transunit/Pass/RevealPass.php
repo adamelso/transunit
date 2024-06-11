@@ -6,16 +6,7 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
-/**
- * ```
- *       function let(AgentRepository $agentRepository, EventDispatcher $eventDispatcher)
- *       {
- * -         $this->beConstructedWith($agentRepository, $eventDispatcher, 'chicken');
- * +         $this->_testSubject = new TestSubject($this->agentRepository->reveal(), $this->eventDispatcher->reveal(), 'chicken');
- *       }
- * ```
- */
-class InitializeTestSubjectPass implements Pass
+class RevealPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -60,8 +51,7 @@ class InitializeTestSubjectPass implements Pass
 
     private function instantiateTestSubject(Node\Stmt\ClassMethod $node, string $subjectClassname): void
     {
-        /** @var Node\Arg[] $args */
-        $args = [];
+        $rewrittenNode = null;
 
         foreach ($node->stmts as $stmt) {
             if (! $stmt instanceof Node\Stmt\Expression) {
@@ -75,8 +65,8 @@ class InitializeTestSubjectPass implements Pass
                 && $stmt->expr->var->name instanceof Node\Identifier
                 && '_testSubject' === $stmt->expr->var->name->name
             ) {
-                // Already instantiated.
-                continue;
+                $rewrittenNode = $stmt->expr->expr;
+                break;
             }
 
             if (
@@ -84,39 +74,30 @@ class InitializeTestSubjectPass implements Pass
                 && $stmt->expr->name instanceof Node\Identifier
                 && 'beConstructedWith' === $stmt->expr->name->name
             ) {
-                $args = $stmt->expr->args;
+                $rewrittenNode = $stmt->expr;
                 break;
             }
         }
 
-        $node->stmts = array_map(function ($stmt) use ($subjectClassname, $args) {
-            if ($stmt instanceof Node\Stmt\Expression
-                && $stmt->expr instanceof Node\Expr\MethodCall
-                && $stmt->expr->var instanceof Node\Expr\Variable
-                && $stmt->expr->var->name === 'this'
-                && $stmt->expr->name->toString() === 'beConstructedWith'
-            ) {
-                // replace $this->beConstructedWith(...) with $this->_testSubject = new TestSubject(...)
-                return $this->writeInstantiation($subjectClassname, $args);
+        $newArgs = [];
+
+        foreach ($rewrittenNode->args as $arg) {
+            if (!$arg->value instanceof Node\Expr\Variable) {
+                $newArgs[] = $arg;
+                continue;
             }
 
-            return $stmt;
-        }, $node->stmts);
-    }
+            // @todo Confirm the variable was declared as an argument of the let() method
 
-    private function writeInstantiation(string $subjectClassname, array $args = []): Node\Stmt\Expression
-    {
-        return new Node\Stmt\Expression(
-            new Node\Expr\Assign(
+            $newArgs[] = new Node\Arg(new Node\Expr\MethodCall(
                 new Node\Expr\PropertyFetch(
                     new Node\Expr\Variable('this'),
-                    '_testSubject'
+                    $arg->value->name
                 ),
-                new Node\Expr\New_(
-                    new Node\Name($subjectClassname),
-                    $args
-                )
-            )
-        );
+                'reveal'
+            ));
+        }
+
+        $rewrittenNode->args = $newArgs;
     }
 }

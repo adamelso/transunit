@@ -31,7 +31,6 @@ class AssertionPass implements Pass
             return;
         }
 
-        $assertion = $node->expr->name->toString();
         $mappedAssertions = [
             'shouldBe' => 'assertSame',
             'shouldReturn' => 'assertSame',
@@ -41,6 +40,14 @@ class AssertionPass implements Pass
             'shouldImplement' => 'assertInstanceOf',
         ];
 
+        $mappedConstantAssertions = [
+            'null' => 'assertNull',
+            'true' => 'assertTrue',
+            'false' => 'assertFalse',
+        ];
+
+        $assertion = $node->expr->name->toString();
+
         if (!isset($mappedAssertions[$assertion])) {
             return;
         }
@@ -48,19 +55,20 @@ class AssertionPass implements Pass
         $expectation = $node->expr->args[0]->value;
         $call = $node->expr->var;
 
+
         if (
             $expectation instanceof Node\Expr\ConstFetch
-            && $expectation->name->toString() === 'null'
+            && isset($mappedConstantAssertions[$expectation->name->toString()])
         ) {
-            // static::assertNull($call);
+            $assertionMethod = $mappedConstantAssertions[$expectation->name->toString()] ?? null;
+
             $rewrittenAssertion = new Node\Expr\StaticCall(
                 new Node\Name('static'),
-                'assertNull',
+                $assertionMethod,
                 [
                     new Node\Arg($call)
                 ]
             );
-
         } else {
             // static::assertSame($expectation, $call);
             $rewrittenAssertion = new Node\Expr\StaticCall(

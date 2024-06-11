@@ -44,6 +44,17 @@ class ImportSubjectClassPass implements Pass
         if ($ns[0] === 'tests' && $ns[1] === 'unit') {
             array_shift($ns);
             array_shift($ns);
+        } elseif ($ns[0] === 'spec') {
+            array_shift($ns);
+        }
+
+        foreach ($node->stmts as $stmt) {
+            if ($stmt instanceof Node\Stmt\Class_) {
+                $testClassname = $stmt->name->toString();
+                $ns[] = substr($testClassname, 0, -4);
+
+                break;
+            }
         }
 
         $fcqn = implode('\\', $ns);
@@ -56,15 +67,6 @@ class ImportSubjectClassPass implements Pass
                         return;
                     }
                 }
-            }
-        }
-
-        foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Class_) {
-                $testClassname = $stmt->name->toString();
-                $ns[] = substr($testClassname, 0, -4);
-
-                break;
             }
         }
 

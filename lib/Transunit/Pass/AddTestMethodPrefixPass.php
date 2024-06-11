@@ -45,7 +45,7 @@ class AddTestMethodPrefixPass implements Pass
 
         if (
             0 !== strpos($methodName, 'it_')
-            || 0 !== strpos($methodName, 'its_')
+            && 0 !== strpos($methodName, 'its_')
         ) {
             return;
         }

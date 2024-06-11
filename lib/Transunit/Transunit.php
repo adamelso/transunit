@@ -60,17 +60,18 @@ class Transunit
             new Pass\ImportMockingLibraryPass(),
             new Pass\RenameClassPass(),
             new Pass\ChangeExtendedClassPass(),
-            new Pass\UseProphecyTraitPass(),
-            new Pass\GlobalCollaboratorPass(),
-            new Pass\CreateSetupIfNoneExistsPass(),
-            new Pass\InitializeTestSubjectPass(),
-            new Pass\DeclareTestSubjectPropertyPass(),
-            new Pass\CallTestSubjectPass(),
-            new Pass\AssertionPass(),
+            new Pass\DeclareTestSubjectPropertyPass(), // run before CreateSetupIfNoneExistsPass.
+            new Pass\CreateSetupIfNoneExistsPass(), // run after DeclareTestSubjectPropertyPass and before UseProphecyTraitPass
+            new Pass\UseProphecyTraitPass(), // run after CreateSetupIfNoneExistsPass
             new Pass\RenameSetupPass(),
             new Pass\AddTestMethodPrefixPass(),
-            new Pass\ProphesizeGlobalCollaboratorsPass(),
-            new Pass\ProphesizeLocalCollaboratorsPass(),
+            // new Pass\GlobalCollaboratorPass(),
+            new Pass\InitializeTestSubjectPass(),
+            new Pass\RevealPass(),
+            new Pass\CallTestSubjectPass(), // run before CallTestSubjectPass
+            new Pass\AssertionPass(), // run after CallTestSubjectPass.
+            // new Pass\ProphesizeGlobalCollaboratorsPass(), // run before ProphesizeLocalCollaboratorsPass
+            // new Pass\ProphesizeLocalCollaboratorsPass(), // run after ProphesizeGlobalCollaboratorsPass
         ];
 
         /** @var Pass $pass */
