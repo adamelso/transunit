@@ -70,8 +70,8 @@ class ExceptionAssertionPass implements Pass
             array_pop($newStmts);
 
             $newStmts[] = new Node\Stmt\Expression(
-                new Node\Expr\StaticCall(
-                    new Node\Name('static'),
+                new Node\Expr\MethodCall(
+                    new Node\Expr\Variable('this'),
                     'expectException',
                     $expression->expr->var->args
                 )

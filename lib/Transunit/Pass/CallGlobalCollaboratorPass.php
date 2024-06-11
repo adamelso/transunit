@@ -2,25 +2,12 @@
 
 namespace Transunit\Pass;
 
-use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
 /**
  * ```
- *   class TestSubjectTest extends TestCase
- *   {
- *       use ProphecyTrait;
- *
- * +     private ObjectProphecy|AgentRepository $agentRepository;
- * +     private ObjectProphecy|EventDispatcher $eventDispatcher;
- *
- *       function let(AgentRepository $agentRepository, EventDispatcher $eventDispatcher)
- *       {
- *           $this->beConstructedWith($agentRepository, $eventDispatcher);
- *       }
- *
  *       function it_contracts_out_agents(AgentRepository $agentRepository, EventDispatcher $eventDispatcher, Agent $agent47, ContractEvent $event)
  *       {
  * -         $agentRepository->find(47)->willReturn($agent47);
@@ -33,7 +20,7 @@ use Transunit\Pass;
  *       }
  * ```
  */
-class GlobalCollaboratorPass implements Pass
+class CallGlobalCollaboratorPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -46,47 +33,23 @@ class GlobalCollaboratorPass implements Pass
             return;
         }
 
-        $this->declareGlobalCollaborators($node);
+        $this->callGlobalCollaborators($node);
     }
 
     /**
      * get the args of a class method named 'let' or 'setUp' and declare them as class properties
      */
-    private function declareGlobalCollaborators(Node\Stmt\Class_ $node): void
+    private function callGlobalCollaborators(Node\Stmt\Class_ $node): void
     {
         $classMethodNodes = $node->getMethods();
         $globalCollaborators = [];
 
-        $useProphecyTrait = array_shift($node->stmts);
-
-        foreach ($classMethodNodes as $classMethodNode) {
-            if (!in_array($classMethodNode->name->toString(), ['let', 'setUp'], true)) {
+        foreach ($node->getProperties() as $property) {
+            if ('_testSubject' === $property->props[0]->name->toString()) {
                 continue;
             }
 
-            foreach ($classMethodNode->params as $param) {
-                $globalCollaborators[$param->var->name] = $param->type;
-
-                array_unshift(
-                    $node->stmts,
-                    new Node\Stmt\Property(
-                        Modifiers::PRIVATE,
-                        [
-                            new Node\Stmt\PropertyProperty($param->var->name),
-                        ],
-                        [],
-                        // from PHP 8.0
-                        new Node\UnionType(
-                            [
-                                new Node\Identifier('ObjectProphecy'),
-                                new Node\Identifier($param->type),
-                            ]
-                        )
-                    )
-                );
-
-                $context['collaborators'][$param->var->name] = $param->type;
-            }
+            $globalCollaborators[$property->props[0]->name->toString()] = true;
         }
 
         foreach ($classMethodNodes as $classMethodNode) {
@@ -146,11 +109,11 @@ class GlobalCollaboratorPass implements Pass
                     array_pop($newStmts);
 
                     $newStmts[] = new Node\Stmt\Expression(
-                        // ->willReturn()
+                    // ->willReturn()
                         new Node\Expr\MethodCall(
-                            // ->stubbedMethod()
+                        // ->stubbedMethod()
                             new Node\Expr\MethodCall(
-                                // ->collaborator
+                            // ->collaborator
                                 new Node\Expr\PropertyFetch(
                                     new Node\Expr\Variable('this'),
                                     $param->var->name
@@ -169,7 +132,5 @@ class GlobalCollaboratorPass implements Pass
 
             $classMethodNode->params = $newParams;
         }
-
-        array_unshift($node->stmts, $useProphecyTrait);
     }
 }

@@ -72,7 +72,7 @@ class AssertionPass implements Pass
         } else {
             // static::assertSame($expectation, $call);
             $rewrittenAssertion = new Node\Expr\StaticCall(
-                new Node\Name('static'),
+                new Node\Name('self'),
                 $mappedAssertions[$assertion],
                 [
                     new Node\Arg($expectation),

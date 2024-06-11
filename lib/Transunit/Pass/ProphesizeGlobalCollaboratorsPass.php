@@ -23,7 +23,10 @@ class ProphesizeGlobalCollaboratorsPass implements Pass
     public function find(NodeFinder $nodeFinder, $ast): array
     {
         return $nodeFinder->find($ast, function (Node $node) {
-            if ($node instanceof Node\Stmt\ClassMethod && !in_array($node->name->toString(), ['setUp', 'let'],true)) {
+            if (
+                $node instanceof Node\Stmt\ClassMethod
+                && in_array($node->name->toString(), ['setUp', 'let'], true)
+            ) {
                 return $node;
             }
 
@@ -75,10 +78,10 @@ class ProphesizeGlobalCollaboratorsPass implements Pass
                     )
                 )
             );
+        }
 
-            foreach ($node->stmts as $currentStmt) {
-                $newStmts[] = $currentStmt;
-            }
+        foreach ($node->stmts as $currentStmt) {
+            $newStmts[] = $currentStmt;
         }
 
         $node->stmts = $newStmts;
