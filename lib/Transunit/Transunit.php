@@ -74,6 +74,7 @@ class Transunit
             new Pass\ProphesizeGlobalCollaboratorsPass(),
             new Pass\CallGlobalCollaboratorPass(), // run after ProphesizeGlobalCollaboratorsPass
             new Pass\ProphesizeLocalCollaboratorsPass(), // run after ProphesizeGlobalCollaboratorsPass
+            new Pass\TestSubjectAsArgumentPass(),
         ];
 
         /** @var Pass $pass */
