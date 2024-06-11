@@ -70,6 +70,7 @@ class Transunit
             new Pass\RevealPass(),
             new Pass\CallTestSubjectPass(), // run before CallTestSubjectPass
             new Pass\AssertionPass(), // run after CallTestSubjectPass.
+            new Pass\ExceptionAssertionPass(),
             // new Pass\ProphesizeGlobalCollaboratorsPass(), // run before ProphesizeLocalCollaboratorsPass
             // new Pass\ProphesizeLocalCollaboratorsPass(), // run after ProphesizeGlobalCollaboratorsPass
         ];
