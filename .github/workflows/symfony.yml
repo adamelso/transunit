@@ -47,5 +47,8 @@ jobs:
 #    - name: Execute converted unit tests via PHPUnit
 #      run: bin/phpunit --testdox
 
-    - name: 'Candidate conversion: Convert sylius/addressing unit tests from PhpSpec to PHPUnit, then run them'
+    - name: 'Candidate conversion: sylius/addressing'
       run: php transunit.php vendor/sylius/sylius/src/Sylius/Component/Addressing/spec var/sylius/addressing && ./vendor/bin/phpunit var/sylius/addressing
+
+    - name: 'Candidate conversion: sylius/attribute'
+      run: php transunit.php vendor/sylius/sylius/src/Sylius/Component/Attribute/spec var/sylius/attribute && ./vendor/bin/phpunit var/sylius/attribute
