@@ -20,7 +20,8 @@ class Transunit
         $root = dirname(__DIR__, 2);
         $exportDir = "{$root}/{$destination}";
 
-        $fs->remove($exportDir);
+        // @todo Confirm filesystem changes with user.
+        // $fs->remove($exportDir);
         $fs->mkdir($exportDir);
 
         foreach ($specs as $file) {
@@ -61,19 +62,20 @@ class Transunit
             new Pass\RenameClassPass(),
             new Pass\ChangeExtendedClassPass(),
             new Pass\DeclareTestSubjectPropertyPass(),
-            new Pass\CreateSetupIfNoneExistsPass(), // run after DeclareTestSubjectPropertyPass and before UseProphecyTraitPass
+            new Pass\CreateSetupIfNoneExistsPass(), // run after DeclareTestSubjectPropertyPass
             new Pass\UseProphecyTraitPass(), // run after CreateSetupIfNoneExistsPass
             new Pass\RenameSetupPass(),
             new Pass\AddTestMethodPrefixPass(),
             new Pass\InitializeTestSubjectPass(),
-            new Pass\RevealPass(),
+            new Pass\GlobalRevealPass(),
             new Pass\CallTestSubjectPass(),
             new Pass\AssertionPass(), // run after CallTestSubjectPass.
             new Pass\ExceptionAssertionPass(),
             new Pass\DeclareGlobalCollaboratorPass(),
             new Pass\ProphesizeGlobalCollaboratorsPass(),
             new Pass\CallGlobalCollaboratorPass(), // run after ProphesizeGlobalCollaboratorsPass
-            new Pass\ProphesizeLocalCollaboratorsPass(), // run after ProphesizeGlobalCollaboratorsPass
+            new Pass\LocalRevealPass(), // run after ProphesizeGlobalCollaboratorsPass
+            new Pass\ProphesizeLocalCollaboratorsPass(), // run after LocalRevealPass
             new Pass\TestSubjectAsArgumentPass(),
         ];
 

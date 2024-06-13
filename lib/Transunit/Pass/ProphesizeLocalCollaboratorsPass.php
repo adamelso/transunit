@@ -52,11 +52,8 @@ class ProphesizeLocalCollaboratorsPass implements Pass
             return;
         }
 
-        $localCollaborators = [];
-
         foreach ($node->params as $param) {
             $variableName = $param->var->name;
-            $localCollaborators[$variableName] = $param->type->toString();
 
             array_unshift($node->stmts, new Node\Stmt\Expression(
                 new Node\Expr\Assign(
@@ -70,44 +67,11 @@ class ProphesizeLocalCollaboratorsPass implements Pass
                                 'class'
                             )),
                         ]
-                    ),
+                    )
                 )
             ));
         }
 
         $node->params = [];
-
-        $nodeFinder = new NodeFinder();
-
-        // find all variables where the variable name matches the key within $localCollaborators,
-        // and modify it to call ->reveal() on the variable:
-
-        $args = $nodeFinder->findInstanceOf($node->stmts, Node\Arg::class);
-
-        $args = array_filter($args, function ($a) use ($localCollaborators) {
-            if (!$a->value instanceof Node\Expr\Variable) {
-                return false;
-            }
-
-            if (!array_key_exists($a->value->name, $localCollaborators)) {
-                return false;
-            }
-
-            return true;
-        });
-
-        if (empty($args)) {
-            return;
-        }
-
-        // call ->reveal() on the collaborator instance.
-        foreach ($args as $arg) {
-            $collaboratorVariable = $arg->value;
-            $arg->value = new Node\Expr\MethodCall(
-                $collaboratorVariable,
-                'reveal',
-                []
-            );
-        }
     }
 }

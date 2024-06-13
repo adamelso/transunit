@@ -48,4 +48,4 @@ jobs:
 #      run: bin/phpunit --testdox
 
     - name: 'Candidate conversion: Convert sylius/addressing unit tests from PhpSpec to PHPUnit, then run them'
-      run: php transunit.php vendor/sylius/addressing/spec && phpunit var/
+      run: php transunit.php vendor/sylius/addressing/spec var/sylius/addressing && phpunit var/sylius/addressing

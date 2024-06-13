@@ -9,7 +9,7 @@ use Transunit\Pass;
 /**
  * ```
  * -   $this->_testSubject->contractOut(47)->shouldReturn($agent47);
- * +   static::assertSame($agent47, $this->_testSubject->contractOut(47));
+ * +   self::assertSame($agent47, $this->_testSubject->contractOut(47));
  * ```
  */
 class AssertionPass implements Pass
@@ -55,7 +55,6 @@ class AssertionPass implements Pass
         $expectation = $node->expr->args[0]->value;
         $call = $node->expr->var;
 
-
         if (
             $expectation instanceof Node\Expr\ConstFetch
             && isset($mappedConstantAssertions[$expectation->name->toString()])
@@ -63,7 +62,7 @@ class AssertionPass implements Pass
             $assertionMethod = $mappedConstantAssertions[$expectation->name->toString()] ?? null;
 
             $rewrittenAssertion = new Node\Expr\StaticCall(
-                new Node\Name('static'),
+                new Node\Name('self'),
                 $assertionMethod,
                 [
                     new Node\Arg($call)

@@ -6,7 +6,7 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
-class RevealPass implements Pass
+class GlobalRevealPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
