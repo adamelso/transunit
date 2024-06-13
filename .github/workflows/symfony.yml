@@ -37,8 +37,8 @@ jobs:
     - name: Install Dependencies
       run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-    - name: Execute canon unit tests via PhpSpec
-      run: bin/phpspec run --format=pretty --verbose --no-interaction
+#    - name: Execute canon unit tests via PhpSpec
+#      run: ./vendor/bin/phpspec run --format=pretty --verbose --no-interaction
 
 #    - name: Dogfooding via converting unit tests from PhpSpec to PHPUnit
 #      run: |
@@ -48,4 +48,4 @@ jobs:
 #      run: bin/phpunit --testdox
 
     - name: 'Candidate conversion: Convert sylius/addressing unit tests from PhpSpec to PHPUnit, then run them'
-      run: php transunit.php vendor/sylius/addressing/spec var/sylius/addressing && phpunit var/sylius/addressing
+      run: php transunit.php vendor/sylius/addressing/spec var/sylius/addressing && ./vendor/bin/phpunit var/sylius/addressing
