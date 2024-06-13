@@ -77,6 +77,7 @@ class Transunit
             new Pass\LocalRevealPass(), // run after ProphesizeGlobalCollaboratorsPass
             new Pass\ProphesizeLocalCollaboratorsPass(), // run after LocalRevealPass
             new Pass\TestSubjectAsArgumentPass(),
+            new Pass\ReplaceCallsToGetWrappedObjectPass(),
         ];
 
         /** @var Pass $pass */
