@@ -6,6 +6,14 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
 
+/**
+ * ```
+ *      $finder->getIterator()->willReturn(new \ArrayIterator([
+ * -        $splFileInfo->getWrappedObject(),
+ * +        $splFileInfo->reveal(),
+ *      ]));
+ * ```
+ */
 class ReplaceCallsToGetWrappedObjectPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array

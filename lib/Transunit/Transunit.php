@@ -68,7 +68,7 @@ class Transunit
             new Pass\AddTestMethodPrefixPass(),
             new Pass\TestSubjectInstantiationPass(),
             new Pass\GlobalRevealPass(),
-            new Pass\TestSubjectCallsPass(),
+            new Pass\TestSubjectCallPass(),
             new Pass\AssertionPass(), // run after CallTestSubjectPass.
             new Pass\ExceptionAssertionPass(),
             new Pass\DeclareGlobalCollaboratorPass(),
