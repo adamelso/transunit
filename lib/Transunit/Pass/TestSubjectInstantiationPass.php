@@ -15,7 +15,7 @@ use Transunit\Pass;
  *       }
  * ```
  */
-class InitializeTestSubjectPass implements Pass
+class TestSubjectInstantiationPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -60,8 +60,8 @@ class InitializeTestSubjectPass implements Pass
 
     private function instantiateTestSubject(Node\Stmt\ClassMethod $node, string $subjectClassname): void
     {
-        /** @var Node\Arg[] $args */
-        $args = [];
+        /** @var null|Node\Arg[] $args */
+        $args = null;
 
         foreach ($node->stmts as $stmt) {
             if (! $stmt instanceof Node\Stmt\Expression) {
@@ -102,20 +102,25 @@ class InitializeTestSubjectPass implements Pass
 
             return $stmt;
         }, $node->stmts);
+
+        if (null === $args) {
+            array_unshift($node->stmts, $this->writeInstantiation($subjectClassname));
+        }
     }
 
-    private function writeInstantiation(string $subjectClassname, array $args = []): Node\Stmt\Expression
+    private function writeInstantiation(string $subjectClassname, ?array $args = null): Node\Stmt\Expression
     {
+        $newInstance = null === $args
+            ? new Node\Expr\New_(new Node\Name($subjectClassname))
+            : new Node\Expr\New_(new Node\Name($subjectClassname), $args);
+
         return new Node\Stmt\Expression(
             new Node\Expr\Assign(
                 new Node\Expr\PropertyFetch(
                     new Node\Expr\Variable('this'),
                     '_testSubject'
                 ),
-                new Node\Expr\New_(
-                    new Node\Name($subjectClassname),
-                    $args
-                )
+                $newInstance
             )
         );
     }

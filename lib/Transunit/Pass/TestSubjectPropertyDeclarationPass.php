@@ -16,7 +16,7 @@ use Transunit\Pass;
  * +     private TestSubject $_testSubject;
  * ```
  */
-class DeclareTestSubjectPropertyPass implements Pass
+class TestSubjectPropertyDeclarationPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {

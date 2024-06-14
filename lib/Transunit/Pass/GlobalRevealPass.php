@@ -79,6 +79,10 @@ class GlobalRevealPass implements Pass
             }
         }
 
+        if (null === $rewrittenNode) {
+            return;
+        }
+
         $newArgs = [];
 
         foreach ($rewrittenNode->args as $arg) {

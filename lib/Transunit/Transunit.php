@@ -61,14 +61,14 @@ class Transunit
             new Pass\ImportMockingLibraryPass(),
             new Pass\RenameClassPass(),
             new Pass\ChangeExtendedClassPass(),
-            new Pass\DeclareTestSubjectPropertyPass(),
+            new Pass\TestSubjectPropertyDeclarationPass(),
             new Pass\CreateSetupIfNoneExistsPass(), // run after DeclareTestSubjectPropertyPass
             new Pass\UseProphecyTraitPass(), // run after CreateSetupIfNoneExistsPass
             new Pass\RenameSetupPass(),
             new Pass\AddTestMethodPrefixPass(),
-            new Pass\InitializeTestSubjectPass(),
+            new Pass\TestSubjectInstantiationPass(),
             new Pass\GlobalRevealPass(),
-            new Pass\CallTestSubjectPass(),
+            new Pass\TestSubjectCallsPass(),
             new Pass\AssertionPass(), // run after CallTestSubjectPass.
             new Pass\ExceptionAssertionPass(),
             new Pass\DeclareGlobalCollaboratorPass(),

@@ -18,7 +18,7 @@ use Transunit\Pass;
  *       }
  * ```
  */
-class CallTestSubjectPass implements Pass
+class TestSubjectCallsPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
@@ -28,10 +28,6 @@ class CallTestSubjectPass implements Pass
     public function rewrite(Node $node): void
     {
         if (!$node instanceof Node\Stmt\ClassMethod) {
-            return;
-        }
-
-        if (in_array($node->name->toString(), ['setUp', 'let'])) {
             return;
         }
 
@@ -71,7 +67,15 @@ class CallTestSubjectPass implements Pass
             return;
         }
 
-        if ($stmt->name->toString() === 'prophesize') {
+        if ('prophesize' === $stmt->name->toString()) {
+            return;
+        }
+
+        if ('beConstructedWith' === $stmt->name->toString()) {
+            return;
+        }
+
+        if ('beConstructedThrough' === $stmt->name->toString()) {
             return;
         }
 
