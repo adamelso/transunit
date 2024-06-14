@@ -13,8 +13,7 @@ use Transunit\Pass;
  *   {
  * +     $event = $this->prophesize(Event::class);
  *
- * -     $this->_testSubject->onKernelRequest($event);
- * +     $this->_testSubject->onKernelRequest($event->reveal());
+ *       $this->_testSubject->onKernelRequest($event);
  *   }
  * ```
  */
@@ -22,38 +21,63 @@ class ProphesizeLocalCollaboratorsPass implements Pass
 {
     public function find(NodeFinder $nodeFinder, $ast): array
     {
-        return $nodeFinder->find($ast, function (Node $node) {
-            if ($node instanceof Node\Stmt\ClassMethod && !in_array($node->name->toString(), ['setUp', 'let'],true)) {
-                return $node;
-            }
-
-            return null;
-        });
+        return [$nodeFinder->findFirstInstanceOf($ast, Node\Stmt\Namespace_::class)];
     }
 
     public function rewrite(Node $node): void
     {
-        if (!$node instanceof Node\Stmt\ClassMethod) {
+        if (! $node instanceof Node\Stmt\Namespace_) {
             return;
         }
 
-        $this->prophesizeLocalCollaborators($node);
+        $classMethods = (new NodeFinder())->findInstanceOf($node->stmts, Node\Stmt\ClassMethod::class);
+        $importStatements = (new NodeFinder())->findInstanceOf($node->stmts, Node\Stmt\Use_::class);
+
+        $importedClassnames = [];
+
+        /** @var Node\UseItem $import */
+        foreach ($importStatements as $importLine) {
+            // Assumes PSR coding standards are followed with one import per statement.
+            [$import] = $importLine->uses;
+
+            $fqcn = $import->name->name;
+            // @todo Check for aliases.
+            [$importedName] = array_reverse(explode('\\', $fqcn));
+
+            $importedClassnames[] = $importedName;
+        }
+
+        foreach ($classMethods as $methodNode) {
+            if (!$methodNode instanceof Node\Stmt\ClassMethod) {
+                continue;
+            }
+
+            if ('let' === $methodNode->name->toString()) {
+                continue;
+            }
+
+            if ('setUp' === $methodNode->name->toString()) {
+                continue;
+            }
+
+            $this->prophesizeLocalCollaborators($methodNode, $importedClassnames);
+        }
     }
 
     /**
-     * public function test_it_should_do_something(): void {
-     *   $methodCollaborator = $this->prophesize(MethodCollaborator::class);
-     *   ...
-     * }
+     * @param string[] $importedFcqns
      */
-    private function prophesizeLocalCollaborators(Node\Stmt\ClassMethod $node): void
+    private function prophesizeLocalCollaborators(Node\Stmt\ClassMethod $node, array $importedClassnames): void
     {
-        if (in_array($node->name->toString(), ['let', 'setUp'], true)) {
-            return;
-        }
-
         foreach ($node->params as $param) {
             $variableName = $param->var->name;
+            $classname = $param->type->toString();
+
+            // If there is no use statement for the class
+            // assume it is a fully qualified classname likely in the global namespace, such as \DateTime.
+            $classnameNode = in_array($classname, $importedClassnames, true)
+                ? new Node\Name($classname)
+                : new Node\Name\FullyQualified($classname);
 
             array_unshift($node->stmts, new Node\Stmt\Expression(
                 new Node\Expr\Assign(
@@ -62,10 +86,12 @@ class ProphesizeLocalCollaboratorsPass implements Pass
                         new Node\Expr\Variable('this'),
                         'prophesize',
                         [
-                            new Node\Arg(new Node\Expr\ClassConstFetch(
-                                new Node\Name($param->type->toString()),
-                                'class'
-                            )),
+                            new Node\Arg(
+                                new Node\Expr\ClassConstFetch(
+                                    $classnameNode,
+                                    'class'
+                                )
+                            ),
                         ]
                     )
                 )
