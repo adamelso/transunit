@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  symfony-tests:
+  convert-to-phpunit-then-run-tests:
     runs-on: ubuntu-latest
     steps:
     #  To automatically get bug fixes and new Php versions for shivammathur/setup-php,
@@ -22,8 +22,8 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: Copy .env.test.local
-      run: php -r "file_exists('.env.test.local') || copy('.env.test', '.env.test.local');"
+#    - name: Copy .env.test.local
+#      run: php -r "file_exists('.env.test.local') || copy('.env.test', '.env.test.local');"
 
     - name: Cache Composer packages
       id: composer-cache
@@ -52,3 +52,6 @@ jobs:
 
     - name: 'Candidate conversion: sylius/attribute'
       run: php transunit.php vendor/sylius/sylius/src/Sylius/Component/Attribute/spec var/sylius/attribute && ./vendor/bin/phpunit var/sylius/attribute
+
+    - name: 'Candidate conversion: sylius/channel'
+      run: php transunit.php vendor/sylius/sylius/src/Sylius/Component/Channel/spec var/sylius/channel && ./vendor/bin/phpunit var/sylius/channel
