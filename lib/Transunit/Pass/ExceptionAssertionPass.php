@@ -10,9 +10,9 @@ use Transunit\Pass;
  * ```
  *   public function test_it_throws_an_exception_if_country_name_cannot_be_converted_to_code(): void
  *   {
- *       - $this->shouldThrow(\InvalidArgumentException::class)->during('convertToCode', ['Atlantis']);
- *       + static::expectException(\InvalidArgumentException::class);
- *       + $this->_testSubject->convertToCode('Atlantis');
+ * -     $this->shouldThrow(\InvalidArgumentException::class)->during('convertToCode', ['Atlantis']);
+ * +     static::expectException(\InvalidArgumentException::class);
+ * +     $this->_testSubject->convertToCode('Atlantis');
  *   }
  * ```
  */
@@ -21,7 +21,7 @@ class ExceptionAssertionPass implements Pass
     public function find(NodeFinder $nodeFinder, $ast): array
     {
         return $nodeFinder->find($ast, function (Node $node) {
-            if ($node instanceof Node\Stmt\ClassMethod && !in_array($node->name->toString(), ['setUp', 'let'],true)) {
+            if ($node instanceof Node\Stmt\ClassMethod && !in_array($node->name->toString(), ['setUp', 'let'], true)) {
                 return $node;
             }
 
@@ -51,7 +51,7 @@ class ExceptionAssertionPass implements Pass
 
             $expression = $stmt;
 
-            if (!$expression->expr instanceof Node\Expr\MethodCall) {
+            if (! $expression->expr instanceof Node\Expr\MethodCall) {
                 continue;
             }
 
@@ -80,9 +80,11 @@ class ExceptionAssertionPass implements Pass
             $subjectMethodName = $expression->expr->args[0]->value->value;
             $subjectMethodArgs = [];
 
-            /** @var Node\ArrayItem $item */
-            foreach ($expression->expr->args[1]->value->items as $item) {
-                $subjectMethodArgs[] = new Node\Arg($item->value);
+            if ($expression->expr->args[1]->value instanceof Node\Expr\Array_) {
+                /** @var Node\ArrayItem $item */
+                foreach ($expression->expr->args[1]->value->items as $item) {
+                    $subjectMethodArgs[] = new Node\Arg($item->value);
+                }
             }
 
             $newStmts[] = new Node\Stmt\Expression(
