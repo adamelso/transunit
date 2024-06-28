@@ -80,7 +80,7 @@ class ExceptionAssertionPass implements Pass
             $subjectMethodName = $expression->expr->args[0]->value->value;
             $subjectMethodArgs = [];
 
-            if ($expression->expr->args[1]->value instanceof Node\Expr\Array_) {
+            if (count($expression->expr->args) > 1 && $expression->expr->args[1]->value instanceof Node\Expr\Array_) {
                 /** @var Node\ArrayItem $item */
                 foreach ($expression->expr->args[1]->value->items as $item) {
                     $subjectMethodArgs[] = new Node\Arg($item->value);

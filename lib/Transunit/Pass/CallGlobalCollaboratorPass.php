@@ -5,6 +5,7 @@ namespace Transunit\Pass;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Transunit\Pass;
+use Transunit\RootMethodCallExtractor;
 
 /**
  * ```
@@ -75,56 +76,43 @@ class CallGlobalCollaboratorPass implements Pass
                 foreach ($stmts as $i => $stmt) {
                     $newStmts[] = $stmt;
 
-                    if (!$stmt instanceof Node\Stmt\Expression) {
+                    if (! $stmt instanceof Node\Stmt\Expression) {
                         continue;
                     }
 
-                    if (!$stmt->expr instanceof Node\Expr\MethodCall) {
+                    if (! $stmt->expr instanceof Node\Expr\MethodCall) {
                         continue;
                     }
 
-                    // ->willReturn()
-                    // ->shouldBeCalled()
-
-                    if (!$stmt->expr->var instanceof Node\Expr\MethodCall) {
+                    /** @see \Prophecy\Prophecy\MethodProphecy */
+                    if (! in_array($stmt->expr->name->toString(), [
+                        'shouldBeCalled',
+                        'shouldNotBeCalled',
+                        'shouldBeCalledTimes',
+                        'willReturn',
+                    ], true)) {
                         continue;
                     }
 
-                    // ->stubbedMethod()->willReturn()
-                    // ->mockedCall()->shouldBeCalled()
+                    $rootMethodCall = (new RootMethodCallExtractor())->locate($stmt);
 
-                    if (!$stmt->expr->var->var instanceof Node\Expr\Variable) {
-                        continue;
-                    }
+                    // At this point the method call is expected to be one of:
+                    // - $collaborator->stubbedMethod()->willReturn()
+                    // - $collaborator->mockedCall()->shouldBeCalled()
+                    // - $collaborator->mockedCall()->shouldBeCalled()->willReturn()
 
-                    // $collaborator->stubbedMethod()->willReturn()
-                    // $collaborator->mockedCall()->shouldBeCalled()
-
-                    if ($stmt->expr->var->var->name !== $param->var->name) {
+                    if ($rootMethodCall->var->name !== $param->var->name) {
                         continue;
                     }
 
                     // $this->collaborator->stubbedMethod()->willReturn()
 
-                    array_pop($newStmts);
-
-                    $newStmts[] = new Node\Stmt\Expression(
-                    // ->willReturn()
-                        new Node\Expr\MethodCall(
-                        // ->stubbedMethod()
-                            new Node\Expr\MethodCall(
-                            // ->collaborator
-                                new Node\Expr\PropertyFetch(
-                                    new Node\Expr\Variable('this'),
-                                    $param->var->name
-                                ),
-                                $stmt->expr->var->name,
-                                $stmt->expr->var->args
-                            ),
-                            $stmt->expr->name,
-                            $stmt->expr->args
-                        )
+                    $rootMethodCall->var = new Node\Expr\PropertyFetch(
+                        new Node\Expr\Variable('this'),
+                        $param->var->name
                     );
+
+                    $newStmts[] = $stmt;
                 }
 
                 $classMethodNode->stmts = $newStmts;
