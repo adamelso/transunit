@@ -27,7 +27,33 @@ class AssertionPass implements Pass
 
     public function rewrite(Node $node): void
     {
-        if (!$node->expr instanceof Node\Expr\MethodCall) {
+        if (! $node->expr instanceof Node\Expr\MethodCall) {
+            return;
+        }
+
+        $assertion = $node->expr->name->toString();
+
+        if ('willReturn' === $assertion) {
+            return;
+        }
+
+        if ('during' === $assertion) {
+            return;
+        }
+
+        if ('shouldBeCalled' === $assertion) {
+            return;
+        }
+
+        if ('shouldNotBeCalled' === $assertion) {
+            return;
+        }
+
+        if ('shouldBeCalledTimes' === $assertion) {
+            return;
+        }
+
+        if (! str_starts_with($assertion, 'should')) {
             return;
         }
 
@@ -46,20 +72,53 @@ class AssertionPass implements Pass
             'false' => 'assertFalse',
         ];
 
-        $assertion = $node->expr->name->toString();
+        $mappedDynamicAssertions = [];
 
-        if (!isset($mappedAssertions[$assertion])) {
-            return;
+        $impliedMethodName = null;
+
+        if (! isset($mappedAssertions[$assertion])) {
+            if (str_starts_with($assertion, 'shouldBe') || str_starts_with($assertion, 'shouldHave')) {
+                $impliedMethodName = strtr($assertion, [
+                    'shouldBe' => 'is',
+                    'shouldHave' => 'has',
+                ]);
+                $mappedDynamicAssertions[$assertion] = 'assertTrue';
+
+            } elseif (str_starts_with($assertion, 'shouldNotBe') || str_starts_with($assertion, 'shouldNotHave')) {
+                $impliedMethodName = strtr($assertion, [
+                    'shouldNotBe' => 'is',
+                    'shouldNotHave' => 'has',
+                ]);
+                $mappedDynamicAssertions[$assertion] = 'assertFalse';
+            }
         }
 
-        $expectation = $node->expr->args[0]->value;
-        $call = $node->expr->var;
+        if (null === $impliedMethodName && count($node->expr->args) > 0) {
+            $call = $node->expr->var;
+            $expectation = $node->expr->args[0]->value;
+        } else {
+            $call = new Node\Expr\MethodCall($node->expr->var, $impliedMethodName);
+            $expectation = null;
+        }
 
         if (
             $expectation instanceof Node\Expr\ConstFetch
             && isset($mappedConstantAssertions[$expectation->name->toString()])
         ) {
-            $assertionMethod = $mappedConstantAssertions[$expectation->name->toString()] ?? null;
+            $assertionMethod = $mappedConstantAssertions[$expectation->name->toString()];
+
+            $rewrittenAssertion = new Node\Expr\StaticCall(
+                new Node\Name('self'),
+                $assertionMethod,
+                [
+                    new Node\Arg($call)
+                ]
+            );
+        } elseif (
+            null === $expectation
+            && isset($mappedDynamicAssertions[$assertion])
+        ) {
+            $assertionMethod = $mappedDynamicAssertions[$assertion];
 
             $rewrittenAssertion = new Node\Expr\StaticCall(
                 new Node\Name('self'),
@@ -69,10 +128,16 @@ class AssertionPass implements Pass
                 ]
             );
         } else {
-            // static::assertSame($expectation, $call);
+            $assertionMethod = $mappedAssertions[$assertion] ?? null;
+
+            if (null === $assertionMethod) {
+                throw new \BadMethodCallException("PhpSpec assertion $assertion is not mapped to any PHPUnit assertion.");
+            }
+
+            // e.g. static::assertSame($expectation, $call);
             $rewrittenAssertion = new Node\Expr\StaticCall(
                 new Node\Name('self'),
-                $mappedAssertions[$assertion],
+                $assertionMethod,
                 [
                     new Node\Arg($expectation),
                     new Node\Arg($call)
