@@ -12,28 +12,39 @@ use Symfony\Component\Finder\Finder;
 
 class Transunit
 {
-    public static function run(string $path, string $destination = 'var'): void
+    private Filesystem $filesystem;
+
+    public function __construct(Filesystem $filesystem)
     {
-        $fs = new Filesystem();
+        $this->filesystem = $filesystem;
+    }
+
+    public static function create(): self
+    {
+        return new self(new Filesystem());
+    }
+
+    public function run(string $path, string $destination = 'var'): void
+    {
         $specs = (new Finder())->files()->in($path)->name('*Spec.php');
 
         $root = dirname(__DIR__, 2);
         $exportDir = "{$root}/{$destination}";
 
         // @todo Confirm filesystem changes with user.
-        // $fs->remove($exportDir);
-        $fs->mkdir($exportDir);
+        // $this->filesystem->remove($exportDir);
+        $this->filesystem->mkdir($exportDir);
 
         foreach ($specs as $file) {
-            $relative = trim($fs->makePathRelative($file->getPath(), $path), DIRECTORY_SEPARATOR);
+            $relative = trim($this->filesystem->makePathRelative($file->getPath(), $path), DIRECTORY_SEPARATOR);
             $newFilename = substr($file->getBasename(), 0, -8) . 'Test.php';
             $fullPathToNewTestFile = "{$exportDir}/{$relative}/{$newFilename}";
 
             $modifiedCode = self::processFile($file->getRealPath());
 
-            $fs->mkdir("{$exportDir}/{$relative}");
-            $fs->touch($fullPathToNewTestFile);
-            $fs->dumpFile($fullPathToNewTestFile, $modifiedCode);
+            $this->filesystem->mkdir("{$exportDir}/{$relative}");
+            $this->filesystem->touch($fullPathToNewTestFile);
+            $this->filesystem->dumpFile($fullPathToNewTestFile, $modifiedCode);
         }
     }
 

@@ -11,6 +11,7 @@ use Transunit\Pass;
  * -   $this->_testSubject->contractOut(47)->shouldReturn($agent47);
  * +   self::assertSame($agent47, $this->_testSubject->contractOut(47));
  * ```
+ * @todo Fix duplicate statements from appearing.
  */
 class AssertionPass implements Pass
 {

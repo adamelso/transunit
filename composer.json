@@ -6,7 +6,8 @@
         "phpspec/prophecy-phpunit": "^2.2"
     },
     "require": {
-        "nikic/php-parser": "*"
+        "nikic/php-parser": "*",
+        "symfony/console": "^6.4"
     },
     "autoload": {
         "psr-4": {
